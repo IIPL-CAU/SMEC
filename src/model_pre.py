@@ -30,7 +30,7 @@ class Model(nn.Module, ABC_Model):
             self.norm_fn = nn.BatchNorm2d
         
         self.resnet50 = ResNet(Bottleneck, [3, 4, 6, 3], strides=(2, 2, 2, 1), batch_norm_fn=self.norm_fn)
-        resnet50_path = '/home/jihyun/code/eac_puzzle/model/resnet50_ft_weight.pkl'
+        resnet50_path = '/home/jihyun/code/eac/eac_puzzle/model/resnet50_ft_weight.pkl'
         if pretrained:
             with open(resnet50_path, 'rb') as f:
                 obj = f.read()
@@ -62,11 +62,15 @@ class Model(nn.Module, ABC_Model):
         x = self.stage3(x)
         x = self.stage4(x)
         x = self.stage5(x)
-        
+        # print(x.shape) # [batch, 2048, 7, 7]
+
         if with_cam:
-            features = self.classifier(x) # [batch, num_classes, 7, 7]
-            logits = self.global_average_pooling_2d(features)
-            # logits = torch.nn.functional.gumbel_softmax(logits, tau=1, hard=False, eps=1e-10, dim=- 1)
+            features = self.classifier(x) # 8 7 14 14
+            # logits = torch.nn.functional.gumbel_softmax(features, tau=1, hard=False, eps=1e-10, dim=- 1)
+
+            logits = self.global_average_pooling_2d(features) # 8 7 
+            # logits.shape # [batch, num_classes]
+            # logits = torch.nn.functional.gumbel_softmax(logits, tau=10, hard=False, eps=1e-10, dim=- 1)
             return logits, features
         else:
             features = self.classifier(x) # [batch, num_classes, 7, 7]

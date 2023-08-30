@@ -11,7 +11,7 @@ class ABC_Model(ABC):
         x = torch.mean(x.view(x.size(0), x.size(1), -1), -1)
         if keepdims:
             x = x.view(x.size(0), x.size(1), 1, 1)
-        return x
+        return x # 8 7 
     
     def initialize(self, modules):
         for m in modules:

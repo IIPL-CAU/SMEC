@@ -4,12 +4,13 @@ import torch
 import torch.nn.functional as F
 
 
-def tile_features(features, num_pieces):
+def tile_features_2(features, num_pieces):
     _, _, h, w = features.size()
 
     num_pieces_per_line = int(math.sqrt(num_pieces))
     
-    h_per_patch = h // num_pieces_per_line
+    # h_per_patch = h // num_pieces_per_line
+    h_per_patch = h // 2
     w_per_patch = w // num_pieces_per_line
     # w_per_patch = w // 2 # if you want 2x1 puzzle
     
@@ -31,7 +32,7 @@ def tile_features(features, num_pieces):
     # features = torch.cat(patches, dim=0)
     return torch.cat(patches, dim=0)
 
-def merge_features(features, num_pieces, batch_size):
+def merge_features_2(features, num_pieces, batch_size):
     """
     +-----+-----+-----+-----+
     |  1  |  2  |  3  |  4  |
@@ -49,26 +50,26 @@ def merge_features(features, num_pieces, batch_size):
     index = 0
     ext_h_list = []
 
-    for _ in range(num_pieces_per_line):
+    for _ in range(2):
 
         ext_w_list = []
-        # for _ in range(2): # 2개로 쪼갤땐 이걸루
-        #     ext_w_list.append(features_list[index])
-        #     index += 1
-        for _ in range(num_pieces_per_line): # 4, 16, 32...는 이걸루
+        for _ in range(num_pieces_per_line): # 2개로 쪼갤땐 이걸루
             ext_w_list.append(features_list[index])
             index += 1
+        # for _ in range(num_pieces_per_line): # 4, 16, 32...는 이걸루
+        #     ext_w_list.append(features_list[index])
+        #     index += 1
         
         ext_h_list.append(torch.cat(ext_w_list, dim=3))
 
     features = torch.cat(ext_h_list, dim=2)
     return features
 
-def puzzle_module(x, func_list, num_pieces):
-    tiled_x = tile_features(x, num_pieces)
+def puzzle_module_2(x, func_list, num_pieces):
+    tiled_x = tile_features_2(x, num_pieces)
 
     for func in func_list:
         tiled_x = func(tiled_x)
         
-    merged_x = merge_features(tiled_x, num_pieces, x.size()[0])
+    merged_x = merge_features_2(tiled_x, num_pieces, x.size()[0])
     return merged_x

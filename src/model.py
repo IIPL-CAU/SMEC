@@ -76,15 +76,10 @@ class Backbone(nn.Module, ABC_Model):
                                     self.model.bn1, 
                                     self.model.relu, 
                                     self.model.maxpool)
-        print(self.stage1.shape) # [batch, 64, 56, 56]
         self.stage2 = nn.Sequential(self.model.layer1)
-        self.stage2.shape # [batch, 256, 56, 56]
         self.stage3 = nn.Sequential(self.model.layer2)
-        self.stage3.shape # [batch, 512, 28, 28]
         self.stage4 = nn.Sequential(self.model.layer3)
-        self.stage4.shape # [batch, 1024, 14, 14]
         self.stage5 = nn.Sequential(self.model.layer4)
-        self.stage5.shape # [batch, 2048, 7, 7]
 
 class Classifier(Backbone):
     def __init__(self, model_name, num_classes=7, mode='fix'):
@@ -92,37 +87,23 @@ class Classifier(Backbone):
 
         
         self.classifier = nn.Conv2d(2048, num_classes, 1, bias=False) # 2048 -> 7
-        # self.classifier.shape # [batch, 7, 7, 7]
         self.num_classes = num_classes
 
         self.initialize([self.classifier])
     
     def forward(self, x, with_cam=False):
         x = self.stage1(x)
-        print(x.shape) # [batch, 64, 56, 56]
         x = self.stage2(x)
-        x.shape # [batch, 256, 56, 56]
         x = self.stage3(x)
-        x.shape # [batch, 512, 28, 28]
         x = self.stage4(x)
-        x.shape # [batch, 1024, 14, 14]
         x = self.stage5(x)
-        print(x.shape) # [batch, 2048, 7, 7]
         
         if with_cam:
             features = self.classifier(x) # [batch, num_classes, 7, 7]
             logits = self.global_average_pooling_2d(features)
-            logits.shape # [batch, num_classes, 1, 1]
             logits = torch.nn.functional.gumbel_softmax(logits, tau=1, hard=False, eps=1e-10, dim=- 1)
             return logits, features
         else:
             features = self.classifier(x) # [batch, num_classes, 7, 7]
-            features.shape # [batch, num_classes, 7, 7]
             logits = self.global_average_pooling_2d(features)
-            logits.shape # [batch, num_classes, 1, 1]
             return logits, features
-        
-        # else:
-        #     x = self.global_average_pooling_2d(x, keepdims=True) 
-        #     logits = self.classifier(x).view(-1, self.num_classes)
-        #     return logits
